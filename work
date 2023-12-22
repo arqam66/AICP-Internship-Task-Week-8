@@ -1,0 +1,92 @@
+from datetime import datetime, timedelta
+
+# Constants
+HOURLY_RATE = 20
+HALF_HOUR_RATE = 12
+OPENING_HOUR = 10
+CLOSING_HOUR = 17
+
+# Data structure to store boat information
+boats = {
+    i: {'total_money': 0, 'total_hours': 0, 'return_time': None} for i in range(1, 11)
+}
+
+def validate_time(hour, minute):
+    return OPENING_HOUR <= hour < CLOSING_HOUR and 0 <= minute < 60
+
+def calculate_money_and_update(boat_number, duration):
+    global boats
+    current_time = datetime.now().time()
+    current_hour, current_minute = current_time.hour, current_time.minute
+
+    if not validate_time(current_hour, current_minute):
+        print("Boats can only be hired between 10:00 and 17:00.")
+        return
+
+    return_time = (datetime.now() + timedelta(hours=duration)).time()
+
+    boats[boat_number]['total_money'] += duration * HOURLY_RATE if duration >= 1 else duration * HALF_HOUR_RATE
+    boats[boat_number]['total_hours'] += duration
+    boats[boat_number]['return_time'] = return_time
+
+    print(f"Boat {boat_number} hired for {duration} hours. Return by {return_time}.")
+
+def find_next_available():
+    global boats
+    current_time = datetime.now().time()
+    current_hour, current_minute = current_time.hour, current_time.minute
+
+    available_boats = [boat for boat, data in boats.items() if not data['return_time'] or data['return_time'] <= current_time]
+
+    if available_boats:
+        print(f"Available boats: {', '.join(map(str, available_boats))}")
+    else:
+        earliest_return_time = min([data['return_time'] for data in boats.values() if data['return_time']])
+        print(f"No boats available. Next available boat at {earliest_return_time}.")
+
+def calculate_total_money_and_report():
+    global boats
+    total_money = sum(data['total_money'] for data in boats.values())
+    total_hours = sum(data['total_hours'] for data in boats.values())
+    unused_boats = [boat for boat, data in boats.items() if data['total_hours'] == 0]
+    most_used_boat = max(boats, key=lambda boat: boats[boat]['total_hours'])
+
+    print(f"Total money taken: ${total_money}")
+    print(f"Total number of hours boats were hired: {total_hours}")
+    print(f"Boats not used today: {', '.join(map(str, unused_boats))}")
+    print(f"Boat {most_used_boat} was used the most today ({boats[most_used_boat]['total_hours']} hours).")
+
+# Additional Functionality
+def display_boat_info():
+    for boat_number, data in boats.items():
+        print(f"Boat {boat_number}: Money: ${data['total_money']}, Hours: {data['total_hours']}")
+
+# Main Program
+while True:
+    print("\nMenu:")
+    print("1. Hire a boat")
+    print("2. Find next available boat")
+    print("3. Display boat information")
+    print("4. Calculate total money and report")
+    print("5. Exit")
+
+    choice = input("Enter your choice (1-5): ")
+
+    if choice == '1':
+        boat_number = int(input("Enter the boat number (1-10): "))
+        if boat_number not in boats:
+            print("Invalid boat number.")
+        else:
+            duration = float(input("Enter the duration of hire (in hours): "))
+            calculate_money_and_update(boat_number, duration)
+    elif choice == '2':
+        find_next_available()
+    elif choice == '3':
+        display_boat_info()
+    elif choice == '4':
+        calculate_total_money_and_report()
+    elif choice == '5':
+        print("Exiting the program. Thank you!")
+        break
+    else:
+        print("Invalid choice. Please enter a number between 1 and 5.")
